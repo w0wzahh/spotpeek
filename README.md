@@ -25,7 +25,7 @@ Built with Tauri v2 (Rust backend, React frontend).
 
 1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
 2. Create an app
-3. Add `http://localhost:9133/callback` as a Redirect URI
+3. Add `http://127.0.0.1:9133/callback` as a Redirect URI
 4. Copy the Client ID
 
 ### Running locally
