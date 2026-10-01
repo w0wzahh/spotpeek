@@ -72,10 +72,8 @@ struct CallbackQuery {
 #[derive(Debug, Clone)]
 pub struct TokenResponse {
     pub access_token: String,
-    pub token_type: String,
     pub expires_in: u64,
     pub refresh_token: Option<String>,
-    pub scope: Option<String>,
 }
 
 pub async fn start_callback_server(
@@ -110,8 +108,7 @@ pub async fn start_callback_server(
                         return Html("<h3>Authentication failed: CSRF mismatch</h3>".to_string());
                     }
 
-                    let client = reqwest::Client::new();
-                    let res = client
+                    let res = crate::spotify::CLIENT
                         .post(SPOTIFY_TOKEN_URL)
                         .form(&[
                             ("grant_type", "authorization_code"),
@@ -133,10 +130,8 @@ pub async fn start_callback_server(
                                     Ok(json) => {
                                         let token = TokenResponse {
                                             access_token: json["access_token"].as_str().unwrap_or("").to_string(),
-                                            token_type: json["token_type"].as_str().unwrap_or("Bearer").to_string(),
                                             expires_in: json["expires_in"].as_u64().unwrap_or(3600),
                                             refresh_token: json["refresh_token"].as_str().map(|s| s.to_string()),
-                                            scope: json["scope"].as_str().map(|s| s.to_string()),
                                         };
                                         let _ = tx.lock().await.send(Ok(token)).await;
                                         Html("<h3>SpotPeek authenticated successfully! You can close this window.</h3>".to_string())
@@ -176,8 +171,7 @@ pub async fn start_callback_server(
 }
 
 pub async fn refresh_access_token(refresh_token: &str, client_id: &str) -> Result<TokenResponse, String> {
-    let client = reqwest::Client::new();
-    let res = client
+    let res = crate::spotify::CLIENT
         .post(SPOTIFY_TOKEN_URL)
         .form(&[
             ("grant_type", "refresh_token"),
@@ -189,15 +183,15 @@ pub async fn refresh_access_token(refresh_token: &str, client_id: &str) -> Resul
         .map_err(|e| e.to_string())?;
 
     if !res.status().is_success() {
-        return Err(format!("Refresh failed: {}", res.status()));
+        let status = res.status();
+        let body = res.text().await.unwrap_or_default();
+        return Err(format!("Refresh failed: {} — {}", status, body));
     }
 
     let json = res.json::<serde_json::Value>().await.map_err(|e| e.to_string())?;
     Ok(TokenResponse {
         access_token: json["access_token"].as_str().unwrap_or("").to_string(),
-        token_type: json["token_type"].as_str().unwrap_or("Bearer").to_string(),
         expires_in: json["expires_in"].as_u64().unwrap_or(3600),
         refresh_token: json["refresh_token"].as_str().map(|s| s.to_string()),
-        scope: json["scope"].as_str().map(|s| s.to_string()),
     })
 }

@@ -7,17 +7,15 @@
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "npm run build",
-    "frontendDist": "http://localhost:1420"
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
         "label": "main",
         "title": "SpotPeek",
-        "width": 340,
-        "height": 160,
-        "minWidth": 340,
-        "minHeight": 160,
+        "width": 400,
+        "height": 104,
         "resizable": false,
         "maximizable": false,
         "minimizable": false,
@@ -27,8 +25,8 @@
         "skipTaskbar": true,
         "visible": false,
         "center": false,
-        "x": 40,
-        "y": 40,
+        "x": 0,
+        "y": 0,
         "shadow": false
       }
     ],
@@ -44,7 +42,7 @@
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
-      "icons/icon.icns",
+      "icons/icon.png",
       "icons/icon.ico"
     ]
   }

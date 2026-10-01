@@ -1,17 +1,19 @@
 # SpotPeek
 
-A tiny Spotify mini-player for Windows 11. It sits in your system tray and pops up a small floating card showing what you are currently playing, along with playback controls.
+A tiny Spotify "floating island" for Windows 11 — a glass pill that docks at the top-center of your screen (Dynamic Island / Rainmeter-style) and springs open on hover with full playback controls.
 
-Built with Tauri v2 (Rust backend, React frontend).
+Built with Tauri v2 (Rust backend, React frontend). Featherweight: no Electron, no bundled Chromium — it rides on the system WebView2 and idles at tens of MB.
 
 ## What it does
 
-- Shows a floating mini-player that stays on top of other windows
+- Floating glass island, always on top, docked top-center (drag to move it)
+- Collapsed pill: album art, scrolling track/artist, live EQ bars, play/pause
+- Hover to expand: artwork, marquee titles, seek bar, shuffle / previous / play / next / repeat, volume slider, like-to-Liked-Songs heart, active device name
 - Lives in the system tray; click the icon to show or hide it
-- Displays the current track, artist, album art, and a progress bar
-- Lets you play, pause, skip, and go back
-- Stores your Spotify tokens in an encrypted local vault
+- Progress bar interpolates smoothly between polls — no jitter
+- Adaptive polling: fast while playing, slow when idle, near-zero when hidden
 - Automatically refreshes the access token when it expires
+- Click the artwork to open the track in Spotify
 
 ## Setup
 
@@ -37,6 +39,8 @@ npm run tauri dev
 
 The first time you run it, paste your Spotify Client ID into the prompt, then log in with your Spotify account.
 
+> **Note:** if you have a `&` in your folder path (e.g. `Games_&_OTHER_Misc`), `npm` scripts can break on Windows cmd. Run `node node_modules/typescript/bin/tsc` / `node node_modules/vite/bin/vite.js` directly instead.
+
 ### Building a release
 
 ```powershell
@@ -48,15 +52,14 @@ npm run tauri build
 ```
 spotpeek/
 ├── src/                  React frontend
-│   ├── App.tsx
-│   ├── styles.css
+│   ├── App.tsx           Island UI (collapsed pill / expanded card)
+│   ├── styles.css        Glassmorphism + spring animations
 │   └── main.tsx
 ├── src-tauri/            Rust backend
 │   ├── src/
 │   │   ├── lib.rs        Tray icon, window, commands
 │   │   ├── auth.rs       OAuth PKCE flow
-│   │   ├── spotify.rs    API client
-│   │   └── store.rs      Encrypted token storage
+│   │   └── spotify.rs    Spotify Web API client
 │   ├── Cargo.toml
 │   └── tauri.conf.json
 └── package.json
@@ -64,13 +67,13 @@ spotpeek/
 
 ## Keyboard shortcut
 
-`Ctrl + Alt + S` toggles the window.
+`Ctrl + Alt + S` toggles the island.
 
 ## Notes
 
 - The app starts hidden. Use the tray icon or the shortcut to bring it up.
-- Tokens are stored in a Tauri Stronghold vault, not plain text.
 - The OAuth callback runs a local server on port 9133.
+- Liking songs requires the `user-library-*` scopes — re-login once if you upgraded from an older version.
 
 ## License
 
