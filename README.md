@@ -1,80 +1,132 @@
+<div align="center">
+
+<img src="src-tauri/icons/icon.png" alt="SpotPeek" width="96" />
+
 # SpotPeek
 
-A tiny Spotify "floating island" for Windows 11 — a glass pill that docks at the top-center of your screen (Dynamic Island / Rainmeter-style) and springs open on hover with full playback controls.
+**A Dynamic Island for Spotify on Windows.**<br/>
+A floating glass pill that lives at the top of your screen — collapsed to a
+tiny pill, blooming open on hover with full playback control.
 
-Built with Tauri v2 (Rust backend, React frontend). Featherweight: no Electron, no bundled Chromium — it rides on the system WebView2 and idles at tens of MB.
+[![Release](https://img.shields.io/github/v/release/w0wzahh/spotpeek?style=flat&color=1db954)](https://github.com/w0wzahh/spotpeek/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4?style=flat)](https://github.com/w0wzahh/spotpeek)
+[![Built with Tauri](https://img.shields.io/badge/built%20with-Tauri%20v2-24c8d8?style=flat)](https://tauri.app)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
 
-## What it does
+[Download](../../releases/latest) · [Report a bug](mailto:emrebelgrad@gmail.com) · [Ko-fi](https://ko-fi.com/w0wzahh)
 
-- Floating glass island, always on top, docked top-center (drag to move it)
-- Collapsed pill: album art, scrolling track/artist, live EQ bars, play/pause
-- Hover to expand: artwork, marquee titles, seek bar, shuffle / previous / play / next / repeat, volume slider, like-to-Liked-Songs heart, active device name
-- Lives in the system tray; click the icon to show or hide it
-- Progress bar interpolates smoothly between polls — no jitter
-- Adaptive polling: fast while playing, slow when idle, near-zero when hidden
-- Automatically refreshes the access token when it expires
-- Click the artwork to open the track in Spotify
+</div>
 
-## Setup
+---
 
-### Prerequisites
+## Why SpotPeek
 
-- Node.js (LTS)
-- Rust (install via [rustup](https://rustup.rs/))
-- A Spotify account
+Spotify's desktop app is heavy for "just show me what's playing." Rainmeter
+widgets can't control playback properly. SpotPeek sits in the middle — a real
+Spotify Connect client in a featherweight package:
 
-### Spotify app
+- **~45 MB RAM** — no Electron, no bundled Chromium; it rides on the system WebView2
+- **Instant reactions** — a Windows media-session (SMTC) listener detects track
+  changes the moment they happen instead of waiting on API polls
+- **Zero work when hidden** — WebView2 drops to low-memory mode, animations and
+  progress rendering fully pause, polling throttles down
 
-1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Create an app
-3. Add `http://127.0.0.1:9133/callback` as a Redirect URI
-4. Copy the Client ID
+## Features
 
-### Running locally
+**Playback**
+- Play / pause / next / previous, seek bar, shuffle, repeat
+- Volume slider with mute toggle (scroll the slider to adjust)
+- Like to Liked Songs · copy track link · open in Spotify
+- **Spotify Connect** device picker — hop playback between devices
+
+**Island behavior**
+- Springs open on hover, collapses when you leave
+- **Drag it anywhere** — it tucks compact while you carry it and blooms back on release; position persists
+- Pops in when a track changes or music starts, then retracts
+- Auto-hides when nothing's playing for a while (optional)
+- Right-click hides instantly · `Ctrl+Alt+S` toggles (rebindable)
+
+**Extras**
+- **Synced lyrics** — karaoke-style highlighting (LRClib)
+- **Save to playlist** — add the current track to any of your playlists
+- **Up Next** — shows the queued track
+- **Voice commands** — offline speech recognition: *peek, show, hide, play, pause, next, previous, like*
+- **Settings sheet** — hotkey recorder, always-on-top, launch at login, accent colors, island size, opacity, snap-to-corner presets
+
+## Install
+
+Grab the latest from [**Releases**](https://github.com/w0wzahh/spotpeek/releases/latest):
+
+- `SpotPeek_x.x.x_x64-setup.exe` — installer (recommended)
+- `SpotPeek-x.x.x-portable.exe` — single file, run it directly
+
+Requires the **WebView2 Runtime** (preinstalled on Windows 11 and most Windows 10 systems).
+
+## First-run setup
+
+SpotPeek talks to Spotify through your own developer app (free, ~2 minutes):
+
+1. Open the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) → **Create app**
+2. Add `http://127.0.0.1:9133/callback` as a **Redirect URI**
+3. Copy the **Client ID**
+4. Launch SpotPeek → paste the Client ID → log in with Spotify
+
+A **Premium** account is required for playback controls (Spotify API limitation).
+
+## Build from source
+
+**Prerequisites:** [Node.js LTS](https://nodejs.org), [Rust](https://rustup.rs)
 
 ```powershell
 npm install
-npm run tauri dev
+npm run tauri dev      # dev mode (hot reload)
+npm run tauri build    # release build + installer
 ```
 
-The first time you run it, paste your Spotify Client ID into the prompt, then log in with your Spotify account.
+> **Windows note:** if your project path contains `&` (e.g. `Games_&_Misc`),
+> npm scripts and WiX bundling can break on cmd — invoke the tools directly
+> (`node node_modules/vite/bin/vite.js build`) or use a path without `&`.
 
-> **Note:** if you have a `&` in your folder path (e.g. `Games_&_OTHER_Misc`), `npm` scripts can break on Windows cmd. Run `node node_modules/typescript/bin/tsc` / `node node_modules/vite/bin/vite.js` directly instead.
-
-### Building a release
-
-```powershell
-npm run tauri build
-```
-
-## Project layout
+## Architecture
 
 ```
 spotpeek/
-├── src/                  React frontend
-│   ├── App.tsx           Island UI (collapsed pill / expanded card)
-│   ├── styles.css        Glassmorphism + spring animations
-│   └── main.tsx
-├── src-tauri/            Rust backend
+├── src/                    React 19 frontend
+│   ├── App.tsx             Island UI: collapsed pill / expanded card / sheets
+│   └── styles.css          Glassmorphism, spring animations
+├── src-tauri/              Rust backend (Tauri v2)
 │   ├── src/
-│   │   ├── lib.rs        Tray icon, window, commands
-│   │   ├── auth.rs       OAuth PKCE flow
-│   │   └── spotify.rs    Spotify Web API client
-│   ├── Cargo.toml
+│   │   ├── lib.rs          Window, tray, hotkeys, settings, commands
+│   │   ├── auth.rs         OAuth 2.0 PKCE + local callback server (:9133)
+│   │   ├── spotify.rs      Spotify Web API client (timeouts, typed models)
+│   │   ├── media.rs        Windows SMTC watcher → instant change events
+│   │   └── voice.rs        WinRT offline speech recognition
 │   └── tauri.conf.json
-└── package.json
+├── tools/make-icons.mjs    Regenerates all icon assets from icon.svg
+└── dist/                   Built frontend
 ```
 
-## Keyboard shortcut
+**Key design choices**
 
-`Ctrl + Alt + S` toggles the island.
+- `GET /me/player` is the source of truth; **SMTC is only the doorbell** that
+  triggers an immediate refetch — keeps API usage minimal while feeling instant
+- Progress bar interpolates via `requestAnimationFrame` + direct DOM writes —
+  no React re-renders at 60fps, and it self-pauses when hidden
+- Tokens refresh transparently; only a real `invalid_grant` logs you out —
+  network blips don't kill your session
+- Single-instance: a second launch just shows the existing island
 
-## Notes
+## Privacy & legal
 
-- The app starts hidden. Use the tray icon or the shortcut to bring it up.
-- The OAuth callback runs a local server on port 9133.
-- Liking songs requires the `user-library-*` scopes — re-login once if you upgraded from an older version.
+- Tokens live in `%APPDATA%\com.spotpeek.app\store.json` on your machine only
+- Voice commands run **offline** via Windows' built-in speech recognition
+- SpotPeek is not affiliated with or endorsed by Spotify AB. The app icon is
+  Lucide's `audio-lines` (ISC), not the Spotify logo.
+
+## Credits
+
+Made by [w0wzahh](https://github.com/w0wzahh) — [☕ Ko-fi](https://ko-fi.com/w0wzahh)
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE)
